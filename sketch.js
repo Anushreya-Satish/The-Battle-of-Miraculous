@@ -28,8 +28,8 @@ var more, moreImg;
 var info, infoImg;
 var game1, game2, game3, game1Img, game2Img, game3Img;
 var music1, music2, music3;
-var edges, death, touch;
-var 
+var edges, death, power, life;
+var playersGroup;
 
 function preload() {
   //load backgrounds
@@ -93,6 +93,31 @@ function preload() {
 function setup() {
   //create a canvas
   createCanvas(1530, 750);
+
+  //create cheese
+  cheese = createSprite(random(500, 1000), 600);
+  cheese.addImage(cheeseImg);
+  cheese.lifetime = 200;
+  cheese.visible = false;
+
+  //create cookie
+  cookie = createSprite(random(400, 900), 700);
+  cookie.addImage(cookieImg);
+  cookie.lifetime = 200;
+  cookie.visible = false;
+
+  //create akuma
+  akuma = createSprite(700, random(300, 600));
+  akuma.addImage(akumaImg);
+  akuma.lifetime = 100;
+  akuma.scale = 0.5;
+  akuma.visible = false;
+
+  //create amok
+  amok = createSprite(700, random(400, 700));
+  amok.addImage(amokImg);
+  amok.lifetime = 100;
+  amok.visible = false;
 
   //create start button
   start = createSprite(760, 700, 50, 50);
@@ -171,13 +196,13 @@ function setup() {
   spike3.visible = false;
 
   //create adrien
-  adrien = createSprite(1300,500,10,10);
+  adrien = createSprite(1300, 500, 10, 10);
   adrien.addImage(adrienImg);
   adrien.scale = 1;
   adrien.visible = false;
 
   //create marinette
-  marinette = createSprite(1400,500,10,10);
+  marinette = createSprite(1400, 500, 10, 10);
   marinette.addImage(marinetteImg);
   marinette.scale = 0.6;
   marinette.visible = false;
@@ -185,11 +210,13 @@ function setup() {
   //create edge sprites
   edges = createEdgeSprites();
 
-  //touch
-  touch = false;
-
-  //store value of death
+  //store value of death, power & life
   death = 0;
+  power = 0;
+  life = 5;
+
+  //array
+  playersGroup = new Group();
 
   //Game State value initially is 0
   gameState = 0;
@@ -238,8 +265,8 @@ function draw() {
     strokeWeight(5);
     textSize(30);
     fill("red");
-    textFont("Forte")
-    text("Death:"+ death, 1400,50);
+    textFont("Forte");
+    text("Death:" + death, 1400, 50);
 
     if (keyDown(RIGHT_ARROW)) {
       plagg.x = plagg.x + 5;
@@ -254,20 +281,20 @@ function draw() {
       plagg.y = plagg.y + 5;
     }
 
-      ball1.bounceOff(wall1);
-      ball1.bounceOff(wall3);
-      ball2.bounceOff(wall1);
-      ball2.bounceOff(wall3);
-      plate.bounceOff(wall3);
-      plate.bounceOff(edges[1]);
-      spike1.bounceOff(wall2);
-      spike2.bounceOff(wall2);
-      spike3.bounceOff(wall2);
-      spike1.bounceOff(edges[2]);
-      spike2.bounceOff(edges[2]);
-      spike3.bounceOff(edges[2]);
+    ball1.bounceOff(wall1);
+    ball1.bounceOff(wall3);
+    ball2.bounceOff(wall1);
+    ball2.bounceOff(wall3);
+    plate.bounceOff(wall3);
+    plate.bounceOff(edges[1]);
+    spike1.bounceOff(wall2);
+    spike2.bounceOff(wall2);
+    spike3.bounceOff(wall2);
+    spike1.bounceOff(edges[2]);
+    spike2.bounceOff(edges[2]);
+    spike3.bounceOff(edges[2]);
 
-      /*if(plagg.isTouching(wall1)||plagg.isTouching(wall2)||plagg.isTouching(wall3)){
+    /*if(plagg.isTouching(wall1)||plagg.isTouching(wall2)||plagg.isTouching(wall3)){
         plagg.x = 50;
         plagg.y = 670;
         death = death + 1;
@@ -282,10 +309,10 @@ function draw() {
         plagg.y = 670;
         death = death + 1;
       }*/
-      if(plagg.isTouching(tikki)){
-        gameState = 4;
-      }
-      /*if(plagg.isTouching(key)){
+    if (plagg.isTouching(tikki)) {
+      gameState = 4;
+    }
+    /*if(plagg.isTouching(key)){
         touch = true;
       }
       if(touch === true){
@@ -297,7 +324,7 @@ function draw() {
         }
       }*/
   }
-  if(gameState === 4){
+  if (gameState === 4) {
     background(bg5);
     jail.visible = false;
     next.visible = true;
@@ -317,13 +344,17 @@ function draw() {
       gameState = 5;
     }
   }
-  if(gameState === 5){
+  if (gameState === 5) {
     background(bg6);
     plagg.visible = true;
     adrien.visible = true;
     tikki.visible = true;
     marinette.visible = true;
     next.visible = false;
+    akuma.visible = true;
+    amok.visible = true;
+    cheese.visible = true;
+    cookie.visible = true;
 
     plagg.x = 1300;
     tikki.x = 1400;
@@ -332,7 +363,86 @@ function draw() {
     plagg.scale = 0.5;
     tikki.scale = 0.5;
 
+    playersMovement();
+
+    if (adrien.x === 60) {
+      adrien.x = 1300;
+      adrien.y = 500;
+    }
+
+    playersGroup.add(adrien);
+    playersGroup.add(marinette);
+    playersGroup.add(plagg);
+    playersGroup.add(tikki);
+
+    if(playersGroup.isTouching(akuma) || playersGroup.isTouching(amok)) {
+      akuma.destroy();
+      amok.destroy();
+
+      akuma = createSprite(700, random(300, 600));
+      akuma.addImage(akumaImg);
+      akuma.lifetime = 100;
+      akuma.scale = 0.5;
+
+      amok = createSprite(700, random(400, 700));
+      amok.addImage(amokImg);
+      amok.lifetime = 100;
+
+      stroke("black");
+      strokeWeight(5);
+      textSize(30);
+      fill("red");
+      textFont("Forte");
+      text("Life:" - life, 1400, 50);
+    }
+
+    if(playersGroup.isTouching(cheese) || playersGroup.isTouching(cookie)) {
+      cheese.destroy();
+      cookie.destroy();
+
+      cheese = createSprite(random(500, 1000), 600);
+      cheese.addImage(cheeseImg);
+      cheese.lifetime = 200;
+
+      cookie = createSprite(random(400, 900), 700);
+      cookie.addImage(cookieImg);
+      cookie.lifetime = 200;
+
+      stroke("black");
+      strokeWeight(5);
+      textSize(30);
+      fill("red");
+      textFont("Forte");
+      text("Power:" + power, 1400, 50);
+    }
   }
 
   drawSprites();
+}
+
+function playersMovement() {
+  if (keyDown(LEFT_ARROW)) {
+    adrien.x = adrien.x - 5;
+    plagg.x = adrien.x;
+    marinette.x = adrien.x + 100;
+    tikki.x = adrien.x + 100;
+  }
+  if (keyDown(RIGHT_ARROW)) {
+    adrien.x = adrien.x + 5;
+    plagg.x = adrien.x;
+    marinette.x = adrien.x + 100;
+    tikki.x = adrien.x + 100;
+  }
+  if (keyDown(UP_ARROW)) {
+    adrien.y = adrien.y - 5;
+    plagg.y = adrien.y;
+    marinette.y = adrien.y + 100;
+    tikki.y = adrien.y + 100;
+  }
+  if (keyDown(DOWN_ARROW)) {
+    adrien.y = adrien.y + 5;
+    plagg.y = adrien.y;
+    marinette.y = adrien.y + 100;
+    tikki.y = adrien.y + 100;
+  }
 }
